@@ -1,10 +1,10 @@
 #include <iostream>
 #include <stdio.h>
 #include <cstring>
-// This library was created to avoid redundant code within the two versions of this program
+// This library was created to avoid redundant Parallel-n-body within the two versions of this program
 #include "commons.hpp"
 
-//The following lines are to be commented or uncommented to compile this code into Struct Of Arrays or Array of Structs
+//The following lines are to be commented or uncommented to compile this Parallel-n-body into Struct Of Arrays or Array of Structs
 #include "aos.hpp"
 #include "soa.hpp"
 
@@ -176,7 +176,7 @@ int main(int argc, char *argv[]){
 
     struct inputParameters params; // To store all parameters in a single data structure
 
-    // If parameters are not valid, exit program with error code
+    // If parameters are not valid, exit program with error Parallel-n-body
     int p = checkAndSetParameters(argc, argv, params);
     if (p == -1){
         return -1;

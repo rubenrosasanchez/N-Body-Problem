@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 # set the project name
-project(sim)
+project(Parallel-n-body)
 # set c++ version
 set(CMAKE_CXX_STANDARD 20)
 
