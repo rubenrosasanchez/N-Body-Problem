@@ -134,6 +134,7 @@ void executeSimulation(inputParameters params){
     vector <spaceVector> gForces;
     gForces.push_back(toFill);
 
+
     // Each iteration of this loop is an iteration of params.time_step seconds up to params.num_iterations times
     for(int index = 0; index < params.num_iterations; ++index){
 
