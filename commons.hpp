@@ -7,7 +7,7 @@
 #include "math.h"
 #include <iostream>
 #include <random>
-#include <omp.h>
+//#include <omp.h>
 
 #define computeVelocity(vi,acc,t) vi+(acc*t)
 #define computePosition(pi,v,t) pi+(v*t)

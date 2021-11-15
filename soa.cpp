@@ -1,6 +1,8 @@
 
 
 #include "soa.hpp"
+#include <omp.h>
+
 #define SOAOBJLEN(o) (o.mass.size())
 using namespace std;
 

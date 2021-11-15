@@ -1,11 +1,6 @@
-//
-// Created by rbn on 10/10/21.
-//
-
-
 #include <iomanip>
 #include "aos.hpp"
-
+#include <omp.h>
 using namespace std;
 
 
@@ -146,7 +141,7 @@ void executeSimulation(inputParameters params){
         for(int a = 0; (unsigned long) a < cb.size(); ++a){
 
             // Before computing velocity and position, we need Force applied from every body in the system
-            for(int b = a+1; (unsigned long) b < cb.size(); ++b){
+            for(unsigned long b = a+1;  b < cb.size(); ++b){
 
                 if(a == 0){ // fill the vector with empty values if more are needed
                     gForces.push_back(toFill);
@@ -177,11 +172,11 @@ void executeSimulation(inputParameters params){
         }
 
         // Uncomment this to check values on each iteration
-        /*
+
         cout << endl;
         cout << "ITERATION " << index << endl;
         cout << endl;
-        */
+
 
         // Now that all factors have been computed, we check for collisions
         for(int a = 0; (unsigned long) a < cb.size(); ++a){
@@ -200,7 +195,7 @@ void executeSimulation(inputParameters params){
         }
 
         // Uncomment this to check values on each iteration
-        /*
+
         for(int ii = 0; (unsigned long) ii < cb.size(); ++ii){
             cout << "Body " << ii << ":" << endl;
             //cout << "\Gravitatinal Forces:" << endl;
@@ -211,7 +206,7 @@ void executeSimulation(inputParameters params){
             cout <<  "\tVx == " << cb.at(ii).vx << " \tVy == " << cb.at(ii).vy << " \tVz == " << cb.at(ii).vz << endl;
             cout << "\tMass == " << cb.at(ii).mass << endl;
         }
-        */
+
 
         // Empty the forces computed in the iteration to prevent errors in the next one
         for(int a = 0; (unsigned long) a < gForces.size(); ++a){
@@ -228,5 +223,3 @@ void executeSimulation(inputParameters params){
     storeConfiguration("final_config.txt", params.size_enclosure, params.time_step, &cb);
 
 }
-
-
