@@ -12,6 +12,7 @@
 #define computeVelocity(vi,acc,t) vi+(acc*t)
 #define computePosition(pi,v,t) pi+(v*t)
 
+
 struct inputParameters{
     int num_objects;
     int num_iterations;

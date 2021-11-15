@@ -6,6 +6,7 @@
 #define SOAOBJLEN(o) (o.mass.size())
 using namespace std;
 
+
 //void checkRebound(spaceObject * obj, double size_enclosure){
 
 void checkRebound(soaObject * obj, double size_enclosure, int index){
