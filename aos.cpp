@@ -107,16 +107,11 @@ void objectCollision(spaceObject *a, spaceObject *b){
     a->vz += b->vz;
 }
 
-void executeSimulation(inputParameters params){
+void checkForInitialCollisions(std::vector<spaceObject> &cb){
 
-    // obtain a vector of celestial bodies
-    vector <spaceObject> cb = getInitialBodies(params);
-
-    storeConfiguration("init_config.txt", params.size_enclosure, params.time_step, &cb);
-
-    // First, let's check the randomly generated set in case there are collisions in the first place
     for(int a = 0; (unsigned long) a < cb.size(); ++a){
-        for(int b = a+1; (unsigned long) b < cb.size(); ++b){
+        #pragma omp parallel for
+        for(unsigned long b = a+1; b < cb.size(); ++b){
             if(isCollision(cb[a].px, cb[a].py, cb[a].pz, cb[b].px, cb[b].py, cb[b].pz)){
                 objectCollision(&cb[a], &cb[b]);
                 cb.erase(cb.begin() + b);
@@ -124,101 +119,148 @@ void executeSimulation(inputParameters params){
         }
     }
 
-    cout << params.size_enclosure << " " << params.time_step << " " << (int) cb.size() << endl;
+}
 
-    // Start a vector to store accelerations and initialize it with an empty value
+std::vector <spaceVector> fillVector(spaceVector toFill, int size){
+
+    std::vector <spaceVector> v;
+
+    //#pragma omp parallel for
+    for(int a = 0; a < size; ++a) {
+
+        // fill the vector with empty values if more are needed
+        v.push_back(toFill);
+
+    }
+
+    return v;
+
+}
+
+void eraseForces(std::vector <spaceVector> &v){
+
+    #pragma omp parallel for
+    for(unsigned long a = 0; a < v.size(); ++a){
+        v[a].x = 0;
+        v[a].y = 0;
+        v[a].z = 0;
+    }
+}
+
+void computeForces(std::vector<spaceObject> &cb, std::vector<spaceVector> &gForces){
+
+
+    for(int a = 0; (unsigned long) a < cb.size(); ++a){
+
+        // Before computing velocity and position, we need Force applied from every body in the system
+        //#pragma omp parallel for
+        for(unsigned long b = a+1;  b < cb.size(); ++b){
+
+            // Obtain gravitational force vector
+            spaceVector force = gravitationalForce(cb[a].mass, cb[b].mass, cb[a].px, cb[a].py, cb[a].pz, cb[b].px, cb[b].py, cb[b].pz);
+            // force on body A
+            gForces[a].x += force.x;
+            gForces[a].y += force.y;
+            gForces[a].z += force.z;
+            // force on body B - force is same magnitude, but opposite direction
+            gForces[b].x -= force.x;
+            gForces[b].y -= force.y;
+            gForces[b].z -= force.z;
+
+        }
+
+    }
+}
+
+void computeVelocitiesAndPositions(std::vector<spaceObject> &cb, std::vector<spaceVector> &gForces, inputParameters params){
+
+    #pragma omp parallel for
+    for(unsigned long a = 0; a < cb.size(); ++a){
+        // compute velocity on body A
+        cb[a].vx = computeVelocity(cb[a].vx, (gForces[a].x / cb[a].mass), params.time_step);
+        cb[a].vy = computeVelocity(cb[a].vy, (gForces[a].y / cb[a].mass), params.time_step);
+        cb[a].vz = computeVelocity(cb[a].vz, (gForces[a].z / cb[a].mass), params.time_step);
+        // compute position on body A
+        cb[a].px = computePosition(cb[a].px, cb[a].vx, params.time_step);
+        cb[a].py = computePosition(cb[a].py, cb[a].vy, params.time_step);
+        cb[a].pz = computePosition(cb[a].pz, cb[a].vz, params.time_step);
+    }
+}
+
+
+void checkForCollisions(std::vector<spaceObject> &cb, inputParameters params){
+
+    for(int a = 0; (unsigned long) a < cb.size(); ++a){
+        #pragma omp parallel for
+        for(unsigned long b = a+1; b < cb.size(); ++b){
+
+            if(isCollision(cb[a].px, cb[a].py, cb[a].pz, cb[b].px, cb[b].py, cb[b].pz)){
+                // Do something about the collision
+                objectCollision(&cb[a], &cb[b]);
+                cb.erase(cb.begin() + b);
+                --b;
+            }else{
+                checkRebound(&cb[b], params.size_enclosure);
+            }
+            checkRebound(&cb[a], params.size_enclosure);
+        }
+    }
+}
+
+
+/*
+void printForDebugging(std::vector<spaceVector> &gForces, std::vector<spaceObject> &cb, int index){
+
+    cout << endl;
+    cout << "ITERATION " << index << endl;
+    cout << endl;
+
+    for(int ii = 0; (unsigned long) ii < cb.size(); ++ii){
+        cout << "Body " << ii << ":" << endl;
+        //cout << "\Gravitatinal Forces:" << endl;
+        cout << "\tFx = " << gForces[ii].x << " \tFy == " << gForces[ii].y << " \tFz == " << gForces[ii].z << endl;
+        //cout << "\tPositions:" << endl;
+        cout << "\tPx == " << cb.at(ii).px << " \tPy == " << cb.at(ii).py << " \tPz == " << cb.at(ii).pz << endl;
+        //cout << "\tVelocities:" << endl;
+        cout <<  "\tVx == " << cb.at(ii).vx << " \tVy == " << cb.at(ii).vy << " \tVz == " << cb.at(ii).vz << endl;
+        cout << "\tMass == " << cb.at(ii).mass << endl;
+    }
+
+}*/
+
+void executeSimulation(inputParameters params){
+
+    cout << "Parallel AOS" << endl;
+
+    // obtain a vector of celestial bodies
+    vector <spaceObject> cb = getInitialBodies(params);
+
+    storeConfiguration("init_config.txt", params.size_enclosure, params.time_step, &cb);
+
+    checkForInitialCollisions(cb);
+
+    //cout << params.size_enclosure << " " << params.time_step << " " << (int) cb.size() << endl;
+
+    // Start a vector to store accelerations and initialize it with an empty values
     spaceVector toFill;
     toFill.x = 0;
     toFill.y = 0;
     toFill.z = 0;
-    vector <spaceVector> gForces;
-    gForces.push_back(toFill);
-
-
+    std::vector <spaceVector> gForces = fillVector(toFill, cb.size());
 
     // Each iteration of this loop is an iteration of params.time_step seconds up to params.num_iterations times
     for(int index = 0; index < params.num_iterations; ++index){
 
-        // Compute all values before checking for collisions
-        for(int a = 0; (unsigned long) a < cb.size(); ++a){
+        computeForces(cb, gForces);
 
-            // Before computing velocity and position, we need Force applied from every body in the system
-            for(unsigned long b = a+1;  b < cb.size(); ++b){
+        computeVelocitiesAndPositions(cb, gForces, params);
 
-                if(a == 0){ // fill the vector with empty values if more are needed
-                    gForces.push_back(toFill);
-                }
+        checkForCollisions(cb, params);
 
-                // Obtain gravitational force vector
-                spaceVector force = gravitationalForce(cb[a].mass, cb[b].mass, cb[a].px, cb[a].py, cb[a].pz, cb[b].px, cb[b].py, cb[b].pz);
-                // force on body A
-                gForces[a].x += force.x;
-                gForces[a].y += force.y;
-                gForces[a].z += force.z;
-                // force on body B - force is same magnitude, but opposite direction
-                gForces[b].x -= force.x;
-                gForces[b].y -= force.y;
-                gForces[b].z -= force.z;
-
-            }
-
-            // compute velocity on body A
-            cb[a].vx = computeVelocity(cb[a].vx, (gForces[a].x / cb[a].mass), params.time_step);
-            cb[a].vy = computeVelocity(cb[a].vy, (gForces[a].y / cb[a].mass), params.time_step);
-            cb[a].vz = computeVelocity(cb[a].vz, (gForces[a].z / cb[a].mass), params.time_step);
-            // compute position on body A
-            cb[a].px = computePosition(cb[a].px, cb[a].vx, params.time_step);
-            cb[a].py = computePosition(cb[a].py, cb[a].vy, params.time_step);
-            cb[a].pz = computePosition(cb[a].pz, cb[a].vz, params.time_step);
-
-        }
-
-        // Uncomment this to check values on each iteration
-
-        cout << endl;
-        cout << "ITERATION " << index << endl;
-        cout << endl;
-
-
-        // Now that all factors have been computed, we check for collisions
-        for(int a = 0; (unsigned long) a < cb.size(); ++a){
-            for(int b = a+1; (unsigned long) b < cb.size(); ++b){
-
-                if(isCollision(cb[a].px, cb[a].py, cb[a].pz, cb[b].px, cb[b].py, cb[b].pz)){
-                    // Do something about the collision
-                    objectCollision(&cb[a], &cb[b]);
-                    cb.erase(cb.begin() + b);
-                    --b;
-                }else{
-                    checkRebound(&cb[b], params.size_enclosure);
-                }
-                checkRebound(&cb[a], params.size_enclosure);
-            }
-        }
-
-        // Uncomment this to check values on each iteration
-
-        for(int ii = 0; (unsigned long) ii < cb.size(); ++ii){
-            cout << "Body " << ii << ":" << endl;
-            //cout << "\Gravitatinal Forces:" << endl;
-            cout << "\tFx = " << gForces[ii].x << " \tFy == " << gForces[ii].y << " \tFz == " << gForces[ii].z << endl;
-            //cout << "\tPositions:" << endl;
-            cout << "\tPx == " << cb.at(ii).px << " \tPy == " << cb.at(ii).py << " \tPz == " << cb.at(ii).pz << endl;
-            //cout << "\tVelocities:" << endl;
-            cout <<  "\tVx == " << cb.at(ii).vx << " \tVy == " << cb.at(ii).vy << " \tVz == " << cb.at(ii).vz << endl;
-            cout << "\tMass == " << cb.at(ii).mass << endl;
-        }
-
+        //printForDebugging(gForces, cb, index);
 
         // Empty the forces computed in the iteration to prevent errors in the next one
-        for(int a = 0; (unsigned long) a < gForces.size(); ++a){
-            gForces[a].x = 0;
-            gForces[a].y = 0;
-            gForces[a].z = 0;
-        }
-
-
-
+        eraseForces(gForces);
 
     }
 
