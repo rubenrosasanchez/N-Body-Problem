@@ -7,7 +7,7 @@
 #include "math.h"
 #include <iostream>
 #include <random>
-//#include <omp.h>
+
 
 #define computeVelocity(vi,acc,t) vi+(acc*t)
 #define computePosition(pi,v,t) pi+(v*t)
@@ -30,10 +30,12 @@ struct spaceVector{
 
 const double G_const = 6.674*(std::pow(10, -11));
 
-double power(double base, int exponent);
-
 double norm(double x, double y, double z);
 
 spaceVector gravitationalForce(double m1, double m2, double x1, double y1, double z1, double x2, double y2, double z2);
 
 bool isCollision(double x1, double y1, double z1, double x2, double y2, double z2);
+
+std::vector <spaceVector> fillVector(spaceVector toFill, int size);
+
+void eraseForces(std::vector <spaceVector> &v);

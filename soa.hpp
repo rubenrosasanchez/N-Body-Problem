@@ -8,8 +8,11 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <omp.h>
 
-#define MARGIN 0.001
+
+#define SOAOBJLEN(o) (o.mass.size())
+//#define MARGIN 0.001
 
 struct soaObject{
     // Mass
@@ -23,12 +26,5 @@ struct soaObject{
     std::vector <double> vy;
     std::vector <double> vz;
 };
-
-void storeConfiguration(std::string filename, double enclosure_size, double step_time, soaObject& obj);
-
-void checkRebound(soaObject * obj, double size_enclosure, int index);
-
-// Destroy object b and add its mass to object a. Compute final acceleration and velocity.
-void objectCollision(soaObject * obj, int index1, int index2);
 
 void executeSimulation(inputParameters params);

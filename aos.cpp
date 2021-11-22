@@ -1,6 +1,5 @@
-#include <iomanip>
+
 #include "aos.hpp"
-#include <omp.h>
 using namespace std;
 
 
@@ -70,7 +69,7 @@ vector <spaceObject> getInitialBodies(inputParameters params){
     return bodies;
 }
 
-void storeConfiguration(string filename, double enclosure_size, double step_time, std::vector<spaceObject> *objs){
+void storeConfiguration(std::string filename, double enclosure_size, double step_time, std::vector<spaceObject> *objs){
 
     // Open file to truncate and create one if it doesn't exist
     std::fstream f;
@@ -121,31 +120,9 @@ void checkForInitialCollisions(std::vector<spaceObject> &cb){
 
 }
 
-std::vector <spaceVector> fillVector(spaceVector toFill, int size){
 
-    std::vector <spaceVector> v;
 
-    //#pragma omp parallel for
-    for(int a = 0; a < size; ++a) {
 
-        // fill the vector with empty values if more are needed
-        v.push_back(toFill);
-
-    }
-
-    return v;
-
-}
-
-void eraseForces(std::vector <spaceVector> &v){
-
-    #pragma omp parallel for
-    for(unsigned long a = 0; a < v.size(); ++a){
-        v[a].x = 0;
-        v[a].y = 0;
-        v[a].z = 0;
-    }
-}
 
 void computeForces(std::vector<spaceObject> &cb, std::vector<spaceVector> &gForces){
 
