@@ -226,7 +226,7 @@ void printForDebugging(std::vector<spaceVector> &gForces, std::vector<spaceObjec
 
 void executeSimulation(inputParameters params){
 
-    cout << "Parallel AOS" << endl;
+    //cout << "Parallel AOS" << endl;
 
     // obtain a vector of celestial bodies
     vector <spaceObject> cb = getInitialBodies(params);

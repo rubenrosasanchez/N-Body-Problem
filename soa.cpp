@@ -239,7 +239,7 @@ void printForDebugging(std::vector<spaceVector> &gForces, soaObject &obj, int in
 
 void executeSimulation(inputParameters params){
 
-    cout << "Parallel SOA 2" << endl;
+    //cout << "Parallel SOA" << endl;
 
     soaObject obj = getInitialBodies(params);
 
