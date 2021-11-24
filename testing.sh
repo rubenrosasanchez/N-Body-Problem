@@ -4,9 +4,9 @@
 SEED=1
 SIZE_ENCLOSURE=1000000
 TIME_STEP=1
-POPULATION="50"		# Number of objects
+POPULATION="400"		# Number of objects
 ITERATIONS="100"		# Number of iterations
-NUM_THREADS="2 4"	# Number of threads
+NUM_THREADS="1 2 4"	# Number of threads
 EXECUTABLES="paos psoa"		# Executables to test
 
 for E in $EXECUTABLES; do

@@ -114,15 +114,15 @@ void objectCollision(soaObject *obj, int index1, int index2){
 
 void checkForInitialCollisions(soaObject &obj){
 
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for(unsigned long a = 0; a < SOAOBJLEN(obj); ++a){
 
         for(unsigned long b = a+1; b < SOAOBJLEN(obj); ++b){
 
             if(isCollision(obj.px[a], obj.px[b], obj.py[a], obj.py[b], obj.pz[a], obj.pz[b])){
 
-                #pragma omp critical
-                {
+                //#pragma omp critical
+                //{
                     objectCollision(&obj, a, b);
                     obj.px.erase(obj.px.begin() + b);
                     obj.py.erase(obj.py.begin() + b);
@@ -131,7 +131,8 @@ void checkForInitialCollisions(soaObject &obj){
                     obj.vy.erase(obj.vy.begin() + b);
                     obj.vz.erase(obj.vz.begin() + b);
                     obj.mass.erase(obj.mass.begin() + b);
-                };
+                    --b;
+                //};
             }
         }
     }
@@ -139,7 +140,7 @@ void checkForInitialCollisions(soaObject &obj){
 
 void computeForces(soaObject &obj, std::vector<spaceVector> &gForces){
 
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for(unsigned long a = 0; a < SOAOBJLEN(obj); ++a){
 
         // Before computing velocity and position, we need Force applied from every body in the system
@@ -149,20 +150,20 @@ void computeForces(soaObject &obj, std::vector<spaceVector> &gForces){
             spaceVector force = gravitationalForce(obj.mass[a], obj.mass[b], obj.px[a], obj.py[a], obj.pz[a], obj.px[b], obj.py[b], obj.pz[b]);
 
             // force on body A
-            #pragma omp critical
-            {
+            //#pragma omp critical
+            //{
                 gForces[a].x += force.x;
                 gForces[a].y += force.y;
                 gForces[a].z += force.z;
-            };
+            //};
 
             // force on body B - force is same magnitude, but opposite direction
-            #pragma omp critical
-            {
+            //#pragma omp critical
+            //{
                 gForces[b].x -= force.x;
                 gForces[b].y -= force.y;
                 gForces[b].z -= force.z;
-            };
+            //};
         }
     }
 }
@@ -170,7 +171,7 @@ void computeForces(soaObject &obj, std::vector<spaceVector> &gForces){
 
 void computeVelocitiesAndPositions(soaObject &obj, std::vector<spaceVector> &gForces, inputParameters params){
 
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for(unsigned long a = 0; a < SOAOBJLEN(obj); ++a){
         // velocity on body A
         obj.vx[a] = computeVelocity(obj.vx[a], (gForces[a].x / obj.mass[a]), params.time_step);
@@ -186,15 +187,15 @@ void computeVelocitiesAndPositions(soaObject &obj, std::vector<spaceVector> &gFo
 
 void checkForCollisions(soaObject &obj, inputParameters params){
 
-    #pragma omp parallel for // collapse(2)
+    //#pragma omp parallel for // collapse(2)
     for(unsigned long a = 0; a < SOAOBJLEN(obj); ++a){
 
         for(unsigned long b = a+1; b < SOAOBJLEN(obj); ++b){
 
             if(isCollision(obj.px[a], obj.py[a], obj.pz[a], obj.px[b], obj.py[b], obj.pz[b])){
                 // Do something about the collision
-                #pragma omp critical
-                {
+                //#pragma omp critical
+                //{
                     objectCollision(&obj, a, b);
                     obj.mass.erase(obj.mass.begin() + b);
                     obj.px.erase(obj.px.begin() + b);
@@ -204,15 +205,16 @@ void checkForCollisions(soaObject &obj, inputParameters params){
                     obj.vy.erase(obj.vy.begin() + b);
                     obj.vz.erase(obj.vz.begin() + b);
                     --b;
-                };
+                //};
 
             }else{
-                #pragma omp critical
+                //#pragma omp critical
                 checkRebound(&obj, params.size_enclosure, b); ////////////////////////////////////////////////////////////////////
             }
-            #pragma omp critical
-            checkRebound(&obj, params.size_enclosure, a);
+
         }
+        //#pragma omp critical
+        checkRebound(&obj, params.size_enclosure, a);
     }
 }
 

@@ -46,7 +46,8 @@ std::vector <spaceVector> fillVector(spaceVector toFill, int size){
     for(int a = 0; a < size; ++a) {
 
         // fill the vector with empty values if more are needed
-        v.push_back(toFill);
+        //v.push_back(toFill);
+        v.emplace_back(toFill);
 
     }
 
@@ -56,7 +57,7 @@ std::vector <spaceVector> fillVector(spaceVector toFill, int size){
 
 void eraseForces(std::vector <spaceVector> &v){
 
-#pragma omp parallel for
+//#pragma omp parallel for
     for(unsigned long a = 0; a < v.size(); ++a){
         v[a].x = 0;
         v[a].y = 0;
