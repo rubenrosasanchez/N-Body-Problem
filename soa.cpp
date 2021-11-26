@@ -12,33 +12,27 @@ void checkRebound(soaObject * obj, double size_enclosure, int index){
     // Check lower limits
     if (obj->px[index] < 0 && obj->vx[index] < 0){
         obj->px[index] = 0;
-        //obj->vx = -obj->vx;
         obj->vx[index] *= -1;
     }
     if (obj->py[index] < 0 && obj->vy[index] < 0){
         obj->py[index] = 0;
-        //obj->vy = -obj->vy;
         obj->vy[index] *= -1;
     }
     if (obj->pz[index] < 0 && obj->vz[index] < 0){
         obj->pz[index] = 0;
-        //obj->vz = -obj->vz;
         obj->vz[index] *= -1;
     }
     // Check upper limits
     if (obj->px[index] > size_enclosure && obj->vx[index] > 0){
         obj->px[index] = size_enclosure;
-        //obj->vx = -obj->vx;
         obj->vx[index] *= -1;
     }
     if (obj->py[index] > size_enclosure && obj->vy[index] > 0){
         obj->py[index] = size_enclosure;
-        //obj->vy = -obj->vy;
         obj->vy[index] *= -1;
     }
     if (obj->pz[index] > size_enclosure && obj->vz[index] > 0){
         obj->pz[index] = size_enclosure;
-        //obj->vz = -obj->vz;
         obj->vz[index] *= -1;
     }
 }
@@ -56,11 +50,11 @@ soaObject getInitialBodies(inputParameters params){
     // Now we use a loop to generate random numbers for each object (only mass and position)
     for(int ii = 0; ii < params.num_objects; ++ii){
         // Generate position values
-        obj.px.push_back(positionGenerator(engine));
-        obj.py.push_back(positionGenerator(engine));
-        obj.pz.push_back(positionGenerator(engine));
+        obj.px.emplace_back(positionGenerator(engine));
+        obj.py.emplace_back(positionGenerator(engine));
+        obj.pz.emplace_back(positionGenerator(engine));
         // Generate mass of the object
-        obj.mass.push_back(massGenerator(engine));
+        obj.mass.emplace_back(massGenerator(engine));
     }
     // Initialize velocity to 0
     obj.vx = std::vector<double>(params.num_objects,0);
@@ -114,16 +108,29 @@ void objectCollision(soaObject *obj, int index1, int index2){
 
 void checkForInitialCollisions(soaObject &obj){
 
-    //#pragma omp parallel for
+    bool deletedObject = false;
+
+    #pragma omp parallel for
     for(unsigned long a = 0; a < SOAOBJLEN(obj); ++a){
 
         for(unsigned long b = a+1; b < SOAOBJLEN(obj); ++b){
-
             if(isCollision(obj.px[a], obj.px[b], obj.py[a], obj.py[b], obj.pz[a], obj.pz[b])){
-
-                //#pragma omp critical
-                //{
+                #pragma omp critical
+                {
                     objectCollision(&obj, a, b);
+                    obj.mass[b] = 0;
+                    deletedObject = true;
+                };
+            }
+        }
+    }
+
+    if(deletedObject){
+        #pragma omp parallel
+        for(unsigned long b = 0; b < SOAOBJLEN(obj); ++b){
+            if(obj.mass[b] == 0){
+                #pragma omp critical
+                {
                     obj.px.erase(obj.px.begin() + b);
                     obj.py.erase(obj.py.begin() + b);
                     obj.pz.erase(obj.pz.begin() + b);
@@ -132,8 +139,9 @@ void checkForInitialCollisions(soaObject &obj){
                     obj.vz.erase(obj.vz.begin() + b);
                     obj.mass.erase(obj.mass.begin() + b);
                     --b;
-                //};
+                };
             }
+
         }
     }
 }
@@ -185,18 +193,14 @@ void checkForCollisions(soaObject &obj, inputParameters params){
     for(unsigned long a = 0; a < SOAOBJLEN(obj); ++a){
 
         for(unsigned long b = a+1; b < SOAOBJLEN(obj); ++b){
-
             if(isCollision(obj.px[a], obj.py[a], obj.pz[a], obj.px[b], obj.py[b], obj.pz[b])){
                 // Do something about the collision
-                //#pragma omp critical
-                //{
+                #pragma omp critical
+                {
                     objectCollision(&obj, a, b);
                     obj.mass[b] = 0;
                     deletedObject = true;
-                    //
-
-                //};
-
+                };
             }
         }
         //#pragma omp critical
@@ -204,17 +208,20 @@ void checkForCollisions(soaObject &obj, inputParameters params){
     }
 
     if(deletedObject){
-#pragma omp parallel for
+        #pragma omp parallel for
         for(unsigned long b = 0; b < SOAOBJLEN(obj); ++b){
             if(obj.mass[b] == 0){
-                obj.mass.erase(obj.mass.begin() + b);
-                obj.px.erase(obj.px.begin() + b);
-                obj.py.erase(obj.py.begin() + b);
-                obj.pz.erase(obj.pz.begin() + b);
-                obj.vx.erase(obj.vx.begin() + b);
-                obj.vy.erase(obj.vy.begin() + b);
-                obj.vz.erase(obj.vz.begin() + b);
-                --b;
+                #pragma omp critical
+                {
+                    obj.mass.erase(obj.mass.begin() + b);
+                    obj.px.erase(obj.px.begin() + b);
+                    obj.py.erase(obj.py.begin() + b);
+                    obj.pz.erase(obj.pz.begin() + b);
+                    obj.vx.erase(obj.vx.begin() + b);
+                    obj.vy.erase(obj.vy.begin() + b);
+                    obj.vz.erase(obj.vz.begin() + b);
+                    --b;
+                }
             }
         }
     }
@@ -248,13 +255,10 @@ void executeSimulation(inputParameters params){
 
     soaObject obj = getInitialBodies(params);
 
-
     storeConfiguration("init_config.txt", params.size_enclosure, params.time_step, &obj);
 
     // First, let's check the randomly generated set in case there are collisions in the first place
     checkForInitialCollisions(obj);
-
-    //cout << params.size_enclosure << " " << params.time_step << " " << (int) obj.mass.size() << endl;
 
     // Start a vector to store accelerations and initialize it with an empty value
     spaceVector toFill;

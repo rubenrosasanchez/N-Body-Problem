@@ -6,7 +6,7 @@ Computer Architecture programming project.
 ***
 
 ### What is this about?
-The aim of this project is to solve the N-Body problem using C++ and parallel programming.
+The aim of this project is to solve the N-Body problem using C++ and parallel programming with OpenMP.
 The program will obtain a number of celestial bodies (`num_objects`), a `seed` to randomly generate
 the objects, a real number (`size_enclosure`) that represents the length of a cube's side,
 a period of time (`time_step`) to use as the time it takes between observations and
@@ -16,10 +16,10 @@ the total number of observations (`num_iterations`).
 
 The program is supposed to receive 5 parameters, so its execution on a terminal, depending on which version of the program is to be executed  should be:
 
-> `$ ./sim-aos <num_objects> <num_iterations> <seed> <size_enclosure> <time_step>`
+> `$ ./paos <num_objects> <num_iterations> <seed> <size_enclosure> <time_step>`
 
 or
-> `$ ./sim-soa <num_objects> <num_iterations> <seed> <size_enclosure> <time_step>`
+> `$ ./psoa <num_objects> <num_iterations> <seed> <size_enclosure> <time_step>`
 
 
 - num_objects is an int >= 0
@@ -29,11 +29,11 @@ or
 - time_step is a double > 0 that represents the time it takes for each step
 
 The code is to be compiled using CMake. To compile, execute the following commands on a linux terminal:
-> `$ cmake CMakeLists.txt`
+> `$ cmake -DCMAKE_BUILD_TYPE=Release CMakeLists.txt`
 > 
 > `$ make`
 
-This will compile everything and will result in two executable files: _sim-aos_ and _sim-soa_.
+This will compile everything and will result in two executable files: _paos_ and _psoa_.
 
 The program consists in a _main_ function and three libraries: a _commons_ library for common functionalities, 
 a _AOS_ library to execute the program using an Array of Structs (although it was implemented using _std::vector_) and

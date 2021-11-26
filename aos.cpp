@@ -8,33 +8,27 @@ void checkRebound(spaceObject * obj, double size_enclosure){
     // Check lower limits
     if (obj->px < 0 && obj->vx < 0){
         obj->px = 0;
-        //obj->vx = -obj->vx;
         obj->vx *= -1;
     }
     if (obj->py < 0 && obj->vy < 0){
         obj->py = 0;
-        //obj->vy = -obj->vy;
         obj->vy *= -1;
     }
     if (obj->pz < 0 && obj->vz < 0){
         obj->pz = 0;
-        //obj->vz = -obj->vz;
         obj->vz *= -1;
     }
     // Check upper limits
     if (obj->px > size_enclosure && obj->vx > 0){
         obj->px = size_enclosure;
-        //obj->vx = -obj->vx;
         obj->vx *= -1;
     }
     if (obj->py > size_enclosure && obj->vy > 0){
         obj->py = size_enclosure;
-        //obj->vy = -obj->vy;
         obj->vy *= -1;
     }
     if (obj->pz > size_enclosure && obj->vz > 0){
         obj->pz = size_enclosure;
-        //obj->vz = -obj->vz;
         obj->vz *= -1;
     }
 }
@@ -63,7 +57,7 @@ vector <spaceObject> getInitialBodies(inputParameters params){
         obj.vy = 0;
         obj.vz = 0;
         // Now put the new object into the vector
-        bodies.push_back(obj);
+        bodies.emplace_back(obj);
     }
 
     return bodies;
@@ -108,17 +102,32 @@ void objectCollision(spaceObject *a, spaceObject *b){
 
 void checkForInitialCollisions(std::vector<spaceObject> &cb){
 
-    //#pragma omp for
+    bool deletedObject = false;
+
+    #pragma omp parallel for
     for(unsigned long a = 0; a < cb.size(); ++a){
 
         for(unsigned long b = a+1; b < cb.size(); ++b){
             if(isCollision(cb[a].px, cb[a].py, cb[a].pz, cb[b].px, cb[b].py, cb[b].pz)){
-                //#pragma omp critical
-                //{
-                    objectCollision(&cb[a], &cb[b]);
+                #pragma omp critical
+                {
+                objectCollision(&cb[a], &cb[b]);
+                cb[b].mass = 0;
+                deletedObject = true;
+                };
+            }
+        }
+    }
+
+    if(deletedObject){
+        #pragma omp parallel for
+        for(unsigned long b = 0; b < cb.size(); ++b){
+            if(cb[b].mass == 0){
+                #pragma omp critical
+                {
                     cb.erase(cb.begin() + b);
                     --b;
-                //};
+                }
             }
         }
     }
@@ -180,7 +189,6 @@ void checkForCollisions(std::vector<spaceObject> &cb, inputParameters params){
     for(unsigned long a = 0; a < cb.size(); ++a){
 
         for(unsigned long b = a+1; b < cb.size(); ++b){
-
             if(isCollision(cb[a].px, cb[a].py, cb[a].pz, cb[b].px, cb[b].py, cb[b].pz)){
                 // Do something about the collision
                 #pragma omp critical
@@ -188,19 +196,15 @@ void checkForCollisions(std::vector<spaceObject> &cb, inputParameters params){
                     objectCollision(&cb[a], &cb[b]);
                     cb[b].mass = 0;
                     deletedObject = true;
-                    //cb.erase(cb.begin() + b);
-                    //--b;
                 };
-
             }
         }
-
         //#pragma omp critical
         checkRebound(&cb[a], params.size_enclosure);
     }
 
     if(deletedObject){
-#pragma omp parallel for
+        #pragma omp parallel for
         for(unsigned long a = 0; a < cb.size(); ++a){
             if(cb[a].mass == 0){
                 cb.erase(cb.begin() + a);
@@ -246,8 +250,6 @@ void executeSimulation(inputParameters params){
     storeConfiguration("init_config.txt", params.size_enclosure, params.time_step, &cb);
 
     checkForInitialCollisions(cb);
-
-    //cout << params.size_enclosure << " " << params.time_step << " " << (int) cb.size() << endl;
 
     // Start a vector to store accelerations and initialize it with an empty values
     spaceVector toFill;

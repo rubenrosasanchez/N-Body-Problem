@@ -16,8 +16,8 @@ for E in $EXECUTABLES; do
 				# Set the number of threads
 				export OMP_NUM_THREADS=$N
 				echo "Running with exe=$E objs=$P iters=$I threads=$N"
-				for T in {1..10}; do
-					echo "$T -> `grep task-clock <(perf stat ./$E $P $I $SEED $SIZE_ENCLOSURE $TIME_STEP 2>&1)`"
+				for T in {1..4}; do
+					echo "$T -> `grep elapsed <(perf stat ./$E $P $I $SEED $SIZE_ENCLOSURE $TIME_STEP 2>&1)`"
 				done
 			done
 		done
