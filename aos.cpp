@@ -207,8 +207,12 @@ void checkForCollisions(std::vector<spaceObject> &cb, inputParameters params){
         #pragma omp parallel for
         for(unsigned long a = 0; a < cb.size(); ++a){
             if(cb[a].mass == 0){
-                cb.erase(cb.begin() + a);
-                --a;
+                #pragma omp critical
+                {
+                    cb.erase(cb.begin() + a);
+                    --a;
+                }
+
             }
         }
     }

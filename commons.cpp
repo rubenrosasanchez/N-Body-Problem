@@ -42,13 +42,11 @@ std::vector <spaceVector> fillVector(spaceVector toFill, int size){
 
     std::vector <spaceVector> v;
 
+    v.assign(size, toFill);
+    /*
     for(int a = 0; a < size; ++a) {
-
-        // fill the vector with empty values if more are needed
-        //v.push_back(toFill);
         v.emplace_back(toFill);
-
-    }
+    }*/
 
     return v;
 
