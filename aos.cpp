@@ -108,17 +108,17 @@ void objectCollision(spaceObject *a, spaceObject *b){
 
 void checkForInitialCollisions(std::vector<spaceObject> &cb){
 
-    //#pragma omp parallel for
+    //#pragma omp for
     for(unsigned long a = 0; a < cb.size(); ++a){
 
         for(unsigned long b = a+1; b < cb.size(); ++b){
             if(isCollision(cb[a].px, cb[a].py, cb[a].pz, cb[b].px, cb[b].py, cb[b].pz)){
-                #pragma omp critical
-                {
+                //#pragma omp critical
+                //{
                     objectCollision(&cb[a], &cb[b]);
                     cb.erase(cb.begin() + b);
                     --b;
-                };
+                //};
             }
         }
     }
@@ -131,19 +131,24 @@ void checkForInitialCollisions(std::vector<spaceObject> &cb){
 
 void computeForces(std::vector<spaceObject> &cb, std::vector<spaceVector> &gForces){
 
+#pragma omp parallel for collapse(2)
     for(unsigned long a = 0; a < cb.size(); ++a){
         // Before computing velocity and position, we need Force applied from every body in the system
-        for(unsigned long b = a+1;  b < cb.size(); ++b){
-            // Obtain gravitational force vector
-            spaceVector force = gravitationalForce(cb[a].mass, cb[b].mass, cb[a].px, cb[a].py, cb[a].pz, cb[b].px, cb[b].py, cb[b].pz);
-            // force on body A
-            gForces[a].x += force.x;
-            gForces[a].y += force.y;
-            gForces[a].z += force.z;
-            // force on body B - force is same magnitude, but opposite direction
-            gForces[b].x -= force.x;
-            gForces[b].y -= force.y;
-            gForces[b].z -= force.z;
+        //#pragma omp parallel for
+        for(unsigned long b = 0;  b < cb.size(); ++b){
+
+            if(a != b){
+                // Obtain gravitational force vector
+                spaceVector force = gravitationalForce(cb[a].mass, cb[b].mass, cb[a].px, cb[a].py, cb[a].pz, cb[b].px, cb[b].py, cb[b].pz);
+
+                gForces[a].x += force.x;
+                gForces[a].y += force.y;
+                gForces[a].z += force.z;
+
+            }
+
+
+
         }
     }
 
@@ -152,7 +157,7 @@ void computeForces(std::vector<spaceObject> &cb, std::vector<spaceVector> &gForc
 
 void computeVelocitiesAndPositions(std::vector<spaceObject> &cb, std::vector<spaceVector> &gForces, inputParameters params){
 
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for(unsigned long a = 0; a < cb.size(); ++a){
         // compute velocity on body A
         cb[a].vx = computeVelocity(cb[a].vx, (gForces[a].x / cb[a].mass), params.time_step);
@@ -163,35 +168,48 @@ void computeVelocitiesAndPositions(std::vector<spaceObject> &cb, std::vector<spa
         cb[a].py = computePosition(cb[a].py, cb[a].vy, params.time_step);
         cb[a].pz = computePosition(cb[a].pz, cb[a].vz, params.time_step);
     }
+
 }
 
 
 void checkForCollisions(std::vector<spaceObject> &cb, inputParameters params){
 
-    //#pragma omp parallel for
+    bool deletedObject = false;
+
+    #pragma omp parallel for
     for(unsigned long a = 0; a < cb.size(); ++a){
 
         for(unsigned long b = a+1; b < cb.size(); ++b){
 
             if(isCollision(cb[a].px, cb[a].py, cb[a].pz, cb[b].px, cb[b].py, cb[b].pz)){
                 // Do something about the collision
-                //#pragma omp critical
-                //{
+                #pragma omp critical
+                {
                     objectCollision(&cb[a], &cb[b]);
-                    cb.erase(cb.begin() + b);
-                    --b;
-                //};
+                    cb[b].mass = 0;
+                    deletedObject = true;
+                    //cb.erase(cb.begin() + b);
+                    //--b;
+                };
 
-            }else{
-                //#pragma omp critical
-                checkRebound(&cb[b], params.size_enclosure);
             }
-
         }
 
         //#pragma omp critical
         checkRebound(&cb[a], params.size_enclosure);
     }
+
+    if(deletedObject){
+#pragma omp parallel for
+        for(unsigned long a = 0; a < cb.size(); ++a){
+            if(cb[a].mass == 0){
+                cb.erase(cb.begin() + a);
+                --a;
+            }
+        }
+    }
+
+
 }
 
 
@@ -215,6 +233,9 @@ void printForDebugging(std::vector<spaceVector> &gForces, std::vector<spaceObjec
 
 }*/
 
+
+
+
 void executeSimulation(inputParameters params){
 
     //cout << "Parallel AOS" << endl;
@@ -235,21 +256,27 @@ void executeSimulation(inputParameters params){
     toFill.z = 0;
     std::vector <spaceVector> gForces = fillVector(toFill, cb.size());
 
-    // Each iteration of this loop is an iteration of params.time_step seconds up to params.num_iterations times
-    for(int index = 0; index < params.num_iterations; ++index){
 
-        computeForces(cb, gForces);
+        // Each iteration of this loop is an iteration of params.time_step seconds up to params.num_iterations times
+        for(int index = 0; index < params.num_iterations; ++index){
 
-        computeVelocitiesAndPositions(cb, gForces, params);
+            computeForces(cb, gForces);
 
-        checkForCollisions(cb, params);
 
-        //printForDebugging(gForces, cb, index);
+            computeVelocitiesAndPositions(cb, gForces, params);
 
-        // Empty the forces computed in the iteration to prevent errors in the next one
-        eraseForces(gForces);
 
-    }
+            checkForCollisions(cb, params);
+
+            //printForDebugging(gForces, cb, index);
+
+            // Empty the forces computed in the iteration to prevent errors in the next one
+            eraseForces(gForces, toFill);
+
+        }
+
+
+
 
     storeConfiguration("final_config.txt", params.size_enclosure, params.time_step, &cb);
 
