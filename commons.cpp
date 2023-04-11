@@ -3,13 +3,11 @@
 //
 #include "commons.hpp"
 
-
 double norm(double x, double y, double z){
     return std::sqrt(std::pow(x, 2) + std::pow(y, 2) + std::pow(z, 2));
 }
 
 spaceVector gravitationalForce(double m1, double m2, double x1, double y1, double z1, double x2, double y2, double z2){
-
     spaceVector force;
 
     // Get vector components
@@ -30,16 +28,13 @@ spaceVector gravitationalForce(double m1, double m2, double x1, double y1, doubl
 }
 
 bool isCollision(double x1, double y1, double z1, double x2, double y2, double z2){
-
     if(x1 == x2 && y1 == y2 && z1 == z2){
         return true;
     }
     return false;
 }
 
-
 std::vector <spaceVector> fillVector(spaceVector toFill, int size){
-
     std::vector <spaceVector> v;
 
     v.assign(size, toFill);
@@ -47,14 +42,11 @@ std::vector <spaceVector> fillVector(spaceVector toFill, int size){
     for(int a = 0; a < size; ++a) {
         v.emplace_back(toFill);
     }*/
-
     return v;
-
 }
 
 void eraseForces(std::vector <spaceVector> &v, spaceVector toFill){
     int size = v.size();
     v.erase(v.begin(), v.end());
     v.assign(size, toFill);
-
 }

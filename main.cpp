@@ -11,8 +11,6 @@
 #define NUM_PARAMETERS 6
 using namespace std;
 
-
-
 int convertCharsToInt(char *str){
     int num;
     sscanf(str, "%d", &num);
@@ -30,7 +28,6 @@ bool stringIsNumber(char * s){
 }
 
 void storeParameterValues(int argc, char *argv[], struct inputParameters &p){
-
     for (int i = 1; i < NUM_PARAMETERS; ++i) {
         if (i < argc){
             switch (i) {
@@ -72,7 +69,6 @@ void storeParameterValues(int argc, char *argv[], struct inputParameters &p){
             }
         }
     }
-
 }
 
 int checkParameterValidity(struct inputParameters &p){
@@ -101,7 +97,6 @@ int checkParameterValidity(struct inputParameters &p){
 }
 
 void displayParameters(int argc, char *argv[]){
-
     for (int i = 1; i < NUM_PARAMETERS; ++i) {
 
         if (i < argc){
@@ -134,14 +129,11 @@ void displayParameters(int argc, char *argv[]){
                     break;
                     //default: cout << "Too many parameters!" << endl;
             }
-
         }
-
     }
 }
 
 int checkAndSetParameters(int argc, char *argv[], struct inputParameters &p){
-
     int msg = 0; // Message to return for error handling
     storeParameterValues(argc, argv,p);
     int val = checkParameterValidity(p);
@@ -157,9 +149,7 @@ int checkAndSetParameters(int argc, char *argv[], struct inputParameters &p){
         msg = -2;
     }
     return msg;
-
 }
-
 
 int main(int argc, char *argv[]){
     /*
@@ -183,12 +173,8 @@ int main(int argc, char *argv[]){
     }else if (p == -2){
         return -2;
     }
-
-
-    // timestamp
+    
     executeSimulation(params);
-    // executionTime = currentTime - timestamp
 
     return EXIT_SUCCESS;
-
 }

@@ -1,7 +1,4 @@
-
-
 #include "soa.hpp"
-
 
 
 using namespace std;
@@ -39,7 +36,6 @@ void checkRebound(soaObject * obj, double size_enclosure, int index){
 
 
 soaObject getInitialBodies(inputParameters params){
-
     soaObject obj;
 
     // Prepare the Mersenne generator engine
@@ -61,14 +57,12 @@ soaObject getInitialBodies(inputParameters params){
     obj.vy = std::vector<double>(params.num_objects,0);
     obj.vz = std::vector<double>(params.num_objects,0);
 
-
     return obj;
 }
 
 
 
 void storeConfiguration(std::string filename, double enclosure_size, double step_time, soaObject *obj){
-
     // Open file to truncate and create one if it doesn't exist
     std::fstream f;
     f.open(filename, std::fstream::out | std::fstream::app);
@@ -94,7 +88,6 @@ void storeConfiguration(std::string filename, double enclosure_size, double step
     }else{
         cerr << "Error: couldn't open " << filename << endl;
     }
-
 }
 
 void objectCollision(soaObject *obj, int index1, int index2){
@@ -107,7 +100,6 @@ void objectCollision(soaObject *obj, int index1, int index2){
 
 
 void checkForInitialCollisions(soaObject &obj){
-
     bool deletedObject = false;
 
     #pragma omp parallel for
@@ -147,7 +139,6 @@ void checkForInitialCollisions(soaObject &obj){
 }
 
 void computeForces(soaObject &obj, std::vector<spaceVector> &gForces){
-
 #pragma omp parallel for collapse(2)
     for(unsigned long a = 0; a < SOAOBJLEN(obj); ++a){
 
@@ -162,15 +153,11 @@ void computeForces(soaObject &obj, std::vector<spaceVector> &gForces){
                 gForces[a].y += force.y;
                 gForces[a].z += force.z;
             }
-
         }
     }
-
 }
 
-
 void computeVelocitiesAndPositions(soaObject &obj, std::vector<spaceVector> &gForces, inputParameters params){
-
     #pragma omp parallel for
     for(unsigned long a = 0; a < SOAOBJLEN(obj); ++a){
         // velocity on body A
@@ -186,10 +173,9 @@ void computeVelocitiesAndPositions(soaObject &obj, std::vector<spaceVector> &gFo
 
 
 void checkForCollisions(soaObject &obj, inputParameters params){
-
     bool deletedObject = false;
 
-    #pragma omp parallel for // collapse(2)
+    #pragma omp parallel for
     for(unsigned long a = 0; a < SOAOBJLEN(obj); ++a){
 
         for(unsigned long b = a+1; b < SOAOBJLEN(obj); ++b){
@@ -225,34 +211,9 @@ void checkForCollisions(soaObject &obj, inputParameters params){
             }
         }
     }
-
 }
-
-/*
-void printForDebugging(std::vector<spaceVector> &gForces, soaObject &obj, int index){
-
-    cout << endl;
-    cout << "ITERATION " << index << endl;
-    cout << endl;
-
-    for(int ii = 0; (unsigned long) ii < SOAOBJLEN(obj); ++ii){
-        cout << "Body " << ii << ":" << endl;
-        //cout << "\Gravitatinal Forces:" << endl;
-        cout << "\tFx = " << gForces[ii].x << " \tFy == " << gForces[ii].y << " \tFz == " << gForces[ii].z << endl;
-        //cout << "\tPositions:" << endl;
-        cout << "\tPx == " << obj.px.at(ii) << " \tPy == " << obj.py.at(ii) << " \tPz == " << obj.pz.at(ii) << endl;
-        //cout << "\tVelocities:" << endl;
-        cout <<  "\tVx == " << obj.vx.at(ii) << " \tVy == " << obj.vy.at(ii) << " \tVz == " << obj.vz.at(ii) << endl;
-        cout << "\tMass == " << obj.mass.at(ii) << endl;
-    }
-
-}
-*/
 
 void executeSimulation(inputParameters params){
-
-    //cout << "Parallel SOA" << endl;
-
     soaObject obj = getInitialBodies(params);
 
     storeConfiguration("init_config.txt", params.size_enclosure, params.time_step, &obj);
@@ -270,20 +231,11 @@ void executeSimulation(inputParameters params){
 
     // Each iteration of this loop is an iteration of params.time_step seconds up to params.num_iterations times
     for(int index = 0; index < params.num_iterations; ++index){
-
         computeForces(obj, gForces);
-
         computeVelocitiesAndPositions(obj, gForces, params);
-
         checkForCollisions(obj, params);
-
-        //printForDebugging(gForces, obj, index);
-
         // Empty the forces computed in the iteration to prevent errors in the next one
         eraseForces(gForces, toFill);
-
     }
-
     storeConfiguration("final_config.txt", params.size_enclosure, params.time_step, &obj);
-
 }

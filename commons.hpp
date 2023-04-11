@@ -8,10 +8,8 @@
 #include <iostream>
 #include <random>
 
-
 #define computeVelocity(vi,acc,t) vi+(acc*t)
 #define computePosition(pi,v,t) pi+(v*t)
-
 
 struct inputParameters{
     int num_objects;
@@ -26,7 +24,6 @@ struct spaceVector{
     double y;
     double z;
 };
-
 
 const double G_const = 6.674*(std::pow(10, -11));
 

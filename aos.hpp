@@ -1,8 +1,6 @@
 //
 // Created by rbn on 10/10/21.
 //
-
-
 #pragma once
 
 #include "commons.hpp"
@@ -11,9 +9,6 @@
 #include <iostream>
 #include <iomanip>
 #include <omp.h>
-
-//#include <string>
-
 
 struct spaceObject{
     double mass;
